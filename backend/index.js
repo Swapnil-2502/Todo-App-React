@@ -1,6 +1,7 @@
-
+/* eslint-disable no-undef */
 const express = require("express");
 const { createTodo, updateTodo } = require("./types");
+const { userTodo } = require("./db");
 
 const app = express();
 app.use(express.json)
@@ -11,7 +12,7 @@ const PORT = 8000;
 //     description:
 // }
 
-app.post("/todo",(req,res)=>{
+app.post("/todo",async (req,res)=>{
     const createPayload = req.body
     const parsedPayload = createTodo.safeParse(createPayload)
 
@@ -22,16 +23,29 @@ app.post("/todo",(req,res)=>{
         return ;
     }
     //put it in mongodb
+    await userTodo.create({
+        title: createPayload.title,
+        description: createPayload.description,
+        completed: false
+    })
 
-    return res.send("Hi There")
+    res.json({
+        msg: "Todo created"
+    })
 })
 
-app.get("/todos",(req,res)=>{
-    return res.send("Hi There")
+app.get("/todos",async (req,res)=>{
+    const todos = await userTodo.find({})
+
+    console.log(todos)
+
+    return res.json({
+        todos
+    })
 })
 
 //This is updating something in MongoDB
-app.put("/completed",(req,res)=>{
+app.put("/completed",async (req,res)=>{
     const updatePayload = req.body
     const parsedPayload = updateTodo.safeParse(updatePayload)
 
@@ -42,7 +56,15 @@ app.put("/completed",(req,res)=>{
         return ;
     }
 
-    return res.send("Hi There")
+    await userTodo.update({
+        _id: updatePayload.id
+    },{
+        completed: true
+    })
+
+    res.json({
+        msg: "Todo is marked as completed"
+    })
 })
 
 app.listen(PORT, () => {
